@@ -10,14 +10,15 @@
 
 ## 插件使用方法
 
-1. 通过 Blessing Skin 插件市场安装并启用本插件。
-2. 进入终端，在 Blessing Skin Server 根目录下执行 `php artisan yggc:create-personal-access-client` 命令，创建个人访问客户端（Personal Access Client）。
+1. 如果你已经安装了基于原版 Yggdrasil API 插件修改的旧版插件，请务必在下载新版插件前禁用旧版插件，否则可能出现 `Invalid version string` 错误。
+2. 复制下载链接 [https://mc.sjtu.cn/union](https://mc.sjtu.cn/union)，粘贴至 插件管理 - 从远程下载 - URL，点击提交按钮安装并启用本插件。
+3. 进入终端，在 Blessing Skin Server 根目录下执行 `php artisan yggc:create-personal-access-client` 命令，创建个人访问客户端（Personal Access Client）。
     - 创建完成后，请在 .env 中新建一条配置 `PASSPORT_PERSONAL_ACCESS_CLIENT_ID`，并将其值设为命令返回的个人访问客户端的 Client ID。
-3. 如果你是从原版 Yggdrasil API 插件迁移而来，请在终端中执行 `php artisan yggc:fix-uuid-table` 命令，以清除原版 Yggdrasil API 插件的 UUID 表中可能存在的异常数据，并修改数据表结构。
+4. 如果你是从原版 Yggdrasil API 插件迁移而来，请在终端中执行 `php artisan yggc:fix-uuid-table` 命令，以清除原版 Yggdrasil API 插件的 UUID 表中可能存在的异常数据，并修改数据表结构。
     - **该指令会直接删除 `uuid` 表中的部分记录，因此在执行该指令前，请务必备份原先的 `uuid` 表！！！**
         - 要了解该指令对你的 `uuid` 表都做了什么，请阅读下面的 [关于 Bug 修复](#关于-bug-修复) 部分。
     - 如果你没有安装过原版 Yggdrasil API 而直接安装了本插件，则无需执行这条命令。
-4. 如需启用 Yggdrasil Connect，请在部署好 Janus 后，在本插件的配置页面填写你的 Janus 实例的 OpenID 提供者标识符。
+5. 如需启用 Yggdrasil Connect，请在部署好 Janus 后，在本插件的配置页面填写你的 Janus 实例的 OpenID 提供者标识符。
     - 要了解 Yggdrasil Connect 和 Janus 是什么，请阅读下面的 [关于 Yggdrasil Connect](#关于-yggdrasil-connect) 部分。
     - 要了解如何部署 Janus，请查看 [Janus 项目的代码仓库](https://github.com/bs-community/janus)。
 
@@ -59,7 +60,7 @@ Janus 是一个独立于 Blessing Skin Server 运行、但与 Blessing Skin Serv
         - 但这项改动也会导致「正版验证」（`mojang-verification`）插件的「更新 UUID」功能无法正常工作，具体表现为该功能可能会在 `uuid` 表中插入一条 `pid` 为 `null` 的无效记录，该记录可能导致后续插入相同角色名的正确的 UUID 记录时失败并报错。考虑到该功能即使是在配合原版 Yggdrasil API 插件使用的情况下也可能会导致更大程度的数据错乱，建议直接将该功能禁用。
     - 为保证与原版 Yggdrasil API 插件的兼容性，UUID 表中的角色名字段（`name`）仍被保留，并监听了 `player.renamed` 事件，使得 UUID 表中记录的角色名可以在角色更名时被一同更新。
 - **角色改名（新旧名字仅大小写不同）会导致丢失 uuid**（[#152](https://github.com/bs-community/blessing-skin-plugins/issues/152)）：
-    - 当 UUID 算法为 v3 时，这是预期行为，无需修复。
+    - 当 UUID 算法为 v3 时，Union 版插件修改了默认行为，确保角色改名（包括仅修改大小写）后 UUID 不变，不会出现该问题。
     - 当 UUID 算法为 v4 时，本插件使用 PID 而非角色名作为 UUID 记录与角色模型的关联字段，PID 全局唯一且不可更改，不会出现该问题。
 - **删除角色时不会删除 uuid 表中的对应的记录**（[#202](https://github.com/bs-community/blessing-skin-plugins/issues/202)）：
     - 本插件在 `uuid` 表中将 `pid` 字段定义为了外键，关联至 `players` 表中的 `pid` 字段，并添加了级联删除规则，确保用户删除角色时 `uuid` 表中的 UUID 记录会被一起删除。

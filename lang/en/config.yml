@@ -1,4 +1,4 @@
-plugin-description: Refactored from Yggdrasil API plugin, fixing some bugs and adding Yggdrasil Connect support. Please read the plugin README before use.
+plugin-description: Refactored from Yggdrasil API plugin, fixing some bugs and adding Yggdrasil Connect support. Please read the plugin README before use. | with Union API Support
 read-readme-first: Please read the <a href="/admin/plugins/readme/yggdrasil-connect">README</a> to learn how to configure the plugin before use!
 title: Yggdrasil Connect Configuration
 

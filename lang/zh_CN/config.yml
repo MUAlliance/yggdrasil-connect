@@ -1,4 +1,4 @@
-plugin-description: 重构版 Yggdrasil API 插件，修复了大量 Bug，添加了 Yggdrasil Connect 支持。使用之前请阅读插件 README。
+plugin-description: 重构版 Yggdrasil API 插件，修复了大量 Bug，添加了 Yggdrasil Connect 支持。使用之前请阅读插件 README。| with Union API Support
 read-readme-first: 使用前请务必阅读 <a href="/admin/plugins/readme/yggdrasil-connect">插件 README</a>，了解插件配置方法和注意事项！
 title: Yggdrasil Connect 配置
 
