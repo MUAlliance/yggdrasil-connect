@@ -13,6 +13,30 @@
   <div class="row">
     <div class="col-md-6">
       {{ forms.common|raw }}
+      {{ forms.union|raw }}
+      <div class="card card-success">
+        <div class="card-header">
+          <h3 class="card-title">{{ trans('LittleSkin\\YggdrasilConnect::config.union.data.title') }}</h3>
+        </div>
+        <div class="card-body">
+          <p id="union-uptodate">{{ trans('LittleSkin\\YggdrasilConnect::config.union.data.uptodate') }}</p>
+          <p id="union-outdated" hidden>{{ trans('LittleSkin\\YggdrasilConnect::config.union.data.outdated') }}</p>
+          <button id="union-update-list" class="btn btn-default" onClick="triggerUpdateServerList()" value="">{{ trans('LittleSkin\\YggdrasilConnect::config.union.data.trigger_update') }}</button>
+          <button id="union-update-key" class="btn btn-default" onClick="triggerUpdateKey()" value="">{{ trans('LittleSkin\\YggdrasilConnect::config.union.data.trigger_update_key') }}</button>
+          <button id="union-sync" class="btn btn-default" onClick="triggerSync()" value="">{{ trans('LittleSkin\\YggdrasilConnect::config.union.data.trigger_sync') }}</button>
+          <button id="union-diagnose" class="btn btn-default position-relative" onClick="resetDiagnose()" data-toggle="modal" data-target="#diagnoseModal">{{ trans('LittleSkin\\YggdrasilConnect::config.union.data.trigger_diagnose') }}</button>
+        </div>
+      </div>
+      <div class="card card-primary">
+        <div class="card-header">
+          <h3 class="card-title">{{ trans('LittleSkin\\YggdrasilConnect::config.keypair.title') }}</h3>
+        </div>
+        <div class="card-body">
+          <p>{{ trans('LittleSkin\\YggdrasilConnect::config.union.keypair.label') }}</p>
+          <textarea class="form-control" rows="10" readonly>{{ private_key }}</textarea>
+        </div>
+      </div>
+      {{ forms.union_oauth2_form|raw }}
     </div>
     <div class="col-md-6">
       <div class="card card-success">
@@ -24,9 +48,150 @@
           <p>{{ trans('LittleSkin\\YggdrasilConnect::config.url.notice') }}</p>
         </div>
       </div>
+      <div class="card card-success">
+        <div class="card-header">
+          <h3 class="card-title">{{ trans('LittleSkin\\YggdrasilConnect::config.union.admin_notice') }}</h3>
+        </div>
+        <div class="card-body">
+          <p id="notice"></p>
+        </div>
+      </div>
+      {{ forms.restore_api|raw }}
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">{{ trans('LittleSkin\\YggdrasilConnect::config.union.backend.title') }}</h3>
+        </div>
+        <div class="card-body p-0">
+        {{ include('LittleSkin\\YggdrasilConnect::servers.twig') }}
+        </div>
+      </div>
+      <div class="modal fade" id="diagnoseModal" tabindex="-1" role="dialog" aria-labelledby="diagnoseModal" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="diagnoseModal">{{ trans('LittleSkin\\YggdrasilConnect::config.union.data.trigger_diagnose') }}</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="text-center">
+                <button id="diagnose-start" class="btn btn-primary mt-4 mb-5" onClick="triggerDiagnose()" value=""><i class="fas fa-stethoscope"></i> 开始诊断</button>
+                <div id="diagnose-loading" class="mt-4 mb-5" style="display: none">
+                  <div class="spinner-grow text-primary" role="status">
+                  </div>
+                  <span class="ml-2">正在进行诊断...</span>
+                </div>
+              </div>
+              <div id="diagnose-result" class="ml-3 mr-3 mb-3 mt-2" style="display: none">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script src="https://unpkg.com/marked@4.1.1/marked.min.js"></script>
+      <script src="https://unpkg.com/dompurify@2.4.0/dist/purify.min.js"></script>
+      <script>
+        function triggerUpdateServerList() {
+            blessing.fetch.post("/admin/union/member/updatelist").then((response) => {
+              location.reload();
+            });
+        }
+        function triggerUpdateKey() {
+            blessing.fetch.post("/admin/union/member/updateprivatekey").then((response) => {
+              location.reload();
+            });
+        }
+        function triggerSync() {
+            blessing.fetch.post("/admin/union/member/sync").then((response) => {
+              location.reload();
+            });
+        }
+        function textareaEscape(input) {
+            const textarea = document.createElement("textarea");
+            textarea.textContent = input;
+            return textarea.innerHTML;
+        }
+        function triggerDiagnose() {
+            document.getElementById('diagnose-start').style.display = 'none';
+            document.getElementById('diagnose-loading').style.display = 'flex';
+            document.getElementById('diagnose-loading').style.justifyContent = 'center';
+            document.getElementById('diagnose-loading').style.alignItems = 'center';
+            blessing.fetch.post("/admin/union/member/diagnose").then((response) => {
+              document.getElementById('diagnose-start').style.display = 'none';
+              document.getElementById('diagnose-loading').style.display = 'none';
+              document.getElementById('diagnose-result').style.display = 'block';
+              console.log(response);
+              let table = '<table class="table table-hover table-bordered"><tbody>';
+              table += `<tr><th class="text-center align-middle" scope="row" width="20%">皮肤站<i class="fas fa-long-arrow-alt-right"></i>Union</th><td>${response.status === 'ok' ? '<span class="badge bg-success">成功</span>' : '<span class="badge bg-danger">失败</span>'}</td></tr>`;
+              if (response.status === 'ok') {
+                table += `<tr><th class="text-center align-middle" scope="row">Union<i class="fas fa-long-arrow-alt-right"></i>皮肤站</th><td>${response.data.healthy ? '<span class="badge bg-success">成功</span>' : '<span class="badge bg-danger">失败</span>'}</td></tr>`;
+                if (response.data.healthy) {
+                  table += `<tr><th class="text-center align-middle" scope="row">单程时延</th><td>${(response.data.delay * 1000).toFixed(2)} 毫秒</td></tr>`;
+                }
+                if (response.data.timestamp) {
+                  table += `<tr><th class="text-center align-middle" scope="row">Union 时间戳</th><td>${textareaEscape(response.data.timestamp)}</td></tr>`;
+                }
+                if (response.data.tls_handshake) {
+                  table += `<tr><th class="text-center align-middle" scope="row">TLS 握手</th><td><textarea class="form-control" rows="8" readonly="">${textareaEscape(response.data.tls_handshake)}</textarea></td></tr>`;
+                }
+              }
+              if (response.data.exception) {
+                table += `<tr><th class="text-center align-middle" scope="row">错误信息</th><td><textarea class="form-control" rows="8" readonly="">${textareaEscape(response.data.exception)}</textarea></td></tr>`;
+              }
+              if (response.data.status_code) {
+                table += `<tr><th class="text-center align-middle" scope="row">状态码</th><td>${textareaEscape(response.data.status_code)}</td></tr>`;
+              }
+              if (response.data.headers) {
+                table += `<tr><th class="text-center align-middle" scope="row">响应头</th><td><textarea class="form-control" rows="8" readonly="">${textareaEscape(JSON.stringify(response.data.headers, null, 2))}</textarea></td></tr>`
+              }
+              if (response.data.body) {
+                table += `<tr><th class="text-center align-middle" scope="row">响应体</th><td><textarea class="form-control" rows="8" readonly="">${textareaEscape(response.data.body)}</textarea></td></tr>`
+              }
+              table += '</tbody></table>';
+              const blob = new Blob([table], {
+                type: "application/html",
+              });
+              const blobURL = window.URL.createObjectURL(blob);
+              const exportBtn = `<a class="btn btn-primary btn-sm mb-3" href="${blobURL}" target="_blank" download="诊断报告-${Math.round(new Date().getTime() / 1000)}.html"><i class="fas fa-file-export"></i> 导出诊断报告</a>`;
+              document.getElementById('diagnose-result').innerHTML = exportBtn + table;
+            });
+        }
+        function resetDiagnose() {
+            document.getElementById('diagnose-start').style.display = 'inline-block';
+            document.getElementById('diagnose-loading').style.display = 'none';
+            document.getElementById('diagnose-result').style.display = 'none';
+        }
+        function fetchAdminNotice(api) {
+            let conf = { method: 'GET',
+                   mode: 'cors'};
+            let request = new Request(api);
+            let e = document.getElementById("notice");
+            fetch(request, conf).then(function(response) {
+              	response.json().then(function(data) {
+        		    e.innerHTML = DOMPurify.sanitize(marked.parse(data.meta.admin_notice));
+              	});
+        	});
+        }
+        fetch("{{ union_api_root }}").then((r) => {
+        	r.json().then((response) => {
+        	    console.log(response);
+        		if (response.version != {{ server_list_version }}) {
+                    document.getElementById('union-uptodate').setAttribute('hidden', 'true');
+                    document.getElementById('union-outdated').removeAttribute('hidden');
+                    document.getElementById('union-update-list').removeAttribute('hidden');
+                  }
+                  if (response.privateKeyVersion != {{ private_key_version }}) {
+                    document.getElementById('union-uptodate').setAttribute('hidden', 'true');
+                    document.getElementById('union-outdated').removeAttribute('hidden');
+                    document.getElementById('union-update-key').removeAttribute('hidden');
+                  }
+        	});
+        });
+        fetchAdminNotice('{{ union_api_root }}');
+      </script>
 
       {{ forms.yggc|raw }}
-      {{ forms.keypair|raw }}
     </div>
   </div>
 {% endblock %}

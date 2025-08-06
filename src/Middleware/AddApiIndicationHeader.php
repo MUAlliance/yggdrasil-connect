@@ -12,8 +12,10 @@ class AddApiIndicationHeader
         /** @var Response */
         $response = $next($request);
 
-        // Symfony way
-        $response->headers->set('X-Authlib-Injector-API-Location', url('api/yggdrasil'));
+        if (!isset($response->exclude_ali_header)) {
+            // Symfony way
+            $response->headers->set('X-Authlib-Injector-API-Location', url('api/yggdrasil'));
+        }
 
         return $response;
     }

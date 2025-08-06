@@ -102,6 +102,14 @@ return [
             'ygg_enable_ali' => 'true',
             'ygg_disable_authserver' => 'false',
             'ygg_connect_server_url' => '',
+            'union_api_root' => 'https://skin.mualliance.ltd/api/union',       // MODIFICATION: UNION
+            'union_server_list' => '{}',
+            'union_member_key' => '',
+            'union_server_list_version' => '0',
+            'union_private_key_version' => '0',
+            'union_enable_update' => true,
+            'union_enable_oauth2' => true,
+            //'union_use_blacklist_locally' => true
         ];
 
         foreach ($items as $key => $value) {
@@ -134,6 +142,11 @@ return [
         // 初次使用自动生成私钥
         if (option('ygg_private_key') == '') {
             option(['ygg_private_key' => ygg_generate_rsa_keys()['private']]);
+        }
+
+        if (option('union_oauth2_sig_private_key', '') === '' || option('union_oauth2_sig_public_key', '') === '') {
+            $rsa_keys = ygg_generate_rsa_keys();
+            option(['union_oauth2_sig_private_key' => $rsa_keys['private'], 'union_oauth2_sig_public_key' => $rsa_keys['public']]);
         }
     },
 

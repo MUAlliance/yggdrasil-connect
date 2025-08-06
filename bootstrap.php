@@ -8,12 +8,14 @@ use Blessing\Rejection;
 use Illuminate\Console\Events\ArtisanStarting;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
 use LittleSkin\YggdrasilConnect\Console\CreatePersonalAccessClient;
 use LittleSkin\YggdrasilConnect\Console\FixUUIDTable;
 use LittleSkin\YggdrasilConnect\Models\AccessToken;
+use LittleSkin\YggdrasilConnect\Models\Profile;
 use LittleSkin\YggdrasilConnect\Models\UUID;
 use LittleSkin\YggdrasilConnect\Scope;
 
@@ -24,8 +26,7 @@ return function (Dispatcher $events, Filter $filter, Request $request) {
 
     if (env('YGG_VERBOSE_LOG')) {
         config(['logging.channels.ygg' => [
-            'driver' => 'daily',
-            'days' => env('YGG_VERBOSE_LOG_DAYS'),
+            'driver' => 'single',
             'path' => storage_path('logs/yggdrasil.log'),
         ]]);
     } else {
@@ -79,6 +80,44 @@ return function (Dispatcher $events, Filter $filter, Request $request) {
     $events->listen('player.added', 'LittleSkin\\YggdrasilConnect\\Listeners\\OnPlayerAdded@handle');
     $events->listen('player.renamed', 'LittleSkin\\YggdrasilConnect\\Listeners\\OnPlayerRenamed@handle');
 
+    // MODIFICATION: UNION
+    $events->listen(App\Events\PlayerWasAdded::class, function ($event) {
+        $player = $event->player;
+        $uuid = Profile::getUuidFromName($player->name);
+        $response = Http::timeout(5.0)->withHeaders([ 'X-Union-Member-Key' => option('union_member_key')])
+            ->post(option('union_api_root').'/profile',
+                [ 'id' => $uuid, 'name' => $player->name ]
+            );
+        if (!$response->successful()) {
+            Log::channel('ygg')->info("Player [$player->name] sync to union failed.");
+        }
+        Log::channel('ygg')->info("Player [$player->name] is added.");
+    });
+    
+    $events->listen(App\Events\PlayerProfileUpdated::class, function ($event) {
+        $player = $event->player;
+        $uuid = Profile::getUuidFromName($player->name);
+        $response = Http::timeout(5.0)->withHeaders([ 'X-Union-Member-Key' => option('union_member_key')])
+            ->put(option('union_api_root').'/profile/'.$uuid,
+                [ 'name' => $player->name ]
+            );
+        if (!$response->successful()) {
+            Log::channel('ygg')->info("Player [$player->name] sync to union failed.");
+        }
+        Log::channel('ygg')->info("Player [$uuid]'s name is changed to [$player->name]. ");
+    });
+
+    $events->listen(App\Events\PlayerWillBeDeleted::class, function ($event) {
+        $player = $event->player;
+        $uuid = Profile::getUuidFromName($player->name);
+        $response = Http::timeout(5.0)->withHeaders([ 'X-Union-Member-Key' => option('union_member_key')])
+            ->delete(option('union_api_root').'/profile/'.$uuid);
+        if (!$response->successful()) {
+            Log::channel('ygg')->info("Player [$player->name] sync to union failed.");
+        }
+        Log::channel('ygg')->info("Player [$player->name] is deleted.");
+    });
+
     if (env('YGG_VERBOSE_LOG')) {
         Hook::addMenuItem('admin', 4, [
             'title' => 'LittleSkin\\YggdrasilConnect::log.title',
@@ -112,8 +151,73 @@ return function (Dispatcher $events, Filter $filter, Request $request) {
                     Route::middleware(['api', 'LittleSkin\YggdrasilConnect\Middleware\CheckBearerTokenOAuth:'.Scope::OPENID])
                         ->get('userinfo', 'OIDCController@getUserInfo');
                 });
+                
+                // MODIFICATION: UNION
+                Route::middleware(['LittleSkin\YggdrasilConnect\Middleware\UnionHostVerify'])
+                    ->prefix('api/union/member')
+                    ->group(function () {
+                        Route::post('updatelist', 'UnionController@updateList');
+                        Route::post('updateprivatekey', 'UnionController@updatePrivateKey');
+                        Route::post('updatebackendkey', 'UnionController@serverUpdatesBackendKey');
+                        Route::post('sync', 'UnionController@triggerSync');
+                        Route::post('remapuuid', 'UnionController@remapUUID');
+                        Route::post('updateplugin', 'UpdateController@update');
+                    
+                        Route::get('queryemail','UnionBlacklistController@queryEmail');
+                        Route::post('diagnose', 'UnionController@diagnose');
+                    });
+
+                Route::prefix('api/union/member')
+                    ->group(function () {
+                        Route::get('/', 'UnionController@hello');
+                    });
+
+                Route::prefix('api/union/member/oauth2')
+                    ->group(function () {
+                        Route::get('/', 'UnionOAuth2Controller@getSigPublicKey');
+                        Route::get('grant', 'UnionOAuth2Controller@grant');
+                    });
+        
+                Route::middleware(['web', 'auth'])
+                    ->prefix('union')
+                    ->group(function () {
+                        Route::get('/', 'UnionProfileController@render');
+                        Route::post('bind', 'UnionProfileController@bind');
+                        Route::post('bindto', 'UnionProfileController@bindto');
+                        Route::post('unbind', 'UnionProfileController@unbind');
+                        Route::post('remapuuid', 'UnionProfileController@requestRemapUUID');
+                        Route::get('security/level', 'UnionController@getSecurityLevel');
+                    });
+
+                Route::middleware(['web', 'auth', 'role:admin'])
+                    ->prefix('admin/union')
+                    ->group(function () {
+                        Route::post('member/updatelist', 'UnionController@updateList');
+                        Route::post('member/updateprivatekey', 'UnionController@updatePrivateKey');
+                        Route::post('member/sync', 'UnionController@triggerSync');
+                        Route::post('member/diagnose', 'UnionController@triggerDiagnose');
+                    
+                        Route::view('view/blacklist', 'LittleSkin\\YggdrasilConnect::blacklist');
+                        Route::get('view/blacklist/list', 'UnionBlacklistController@viewBlacklist');
+                        Route::post('blacklist/create', 'UnionBlacklistController@create');
+                        Route::post('blacklist/invalidate/{id}', 'UnionBlacklistController@invalidate');
+                        Route::post('blacklist/delete/{id}', 'UnionBlacklistController@delete');
+                    
+                    });
             });
     });
+
+    Hook::addMenuItem('explore', 1, [
+        'title' => 'LittleSkin\\YggdrasilConnect::union.title',
+        'link' => 'union',
+        'icon' => 'fa-paper-plane',
+    ]);
+  
+  	Hook::addMenuItem('admin', 14, [
+      'title' => 'LittleSkin\\YggdrasilConnect::union.blacklist.title',
+      'link'  => '/admin/union/view/blacklist',
+      'icon'  => 'fa-ban',
+    ]);
 
     Hook::pushMiddleware('LittleSkin\\YggdrasilConnect\\Middleware\\HandleCors'); // https://t.me/blessing_skin/184887
 

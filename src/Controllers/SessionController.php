@@ -23,6 +23,8 @@ class SessionController extends Controller
 {
     public function joinServer(Request $request, Filter $filter): Response
     {
+        @ ini_set('memory_limit', '32M');
+
         $validation = Validator::make($request->all(), [
             'selectedProfile' => ['required', 'string'],
             'serverId' => ['required', 'string'],
@@ -62,7 +64,28 @@ class SessionController extends Controller
             throw new ForbiddenOperationException(trans('LittleSkin\\YggdrasilConnect::exceptions.player.owner'));
         }
 
+        /*
+      	if (option('union_use_blacklist_locally')) {
+        	try {
+            	$response = Http::timeout(5.0)->get(option('union_api_root').'/api/union/blacklist/checkallowed', ['email' => $player->user->email]);
+                if ($response->ok()) {
+                	if ($response->json() != true) {
+                    	throw new ForbiddenOperationException(trans('LittleSkin\\YggdrasilConnect::exceptions.user.banned'));
+                    }
+                } else {
+                	throw new ForbiddenOperationException(trans('LittleSkin\\YggdrasilConnect::exceptions.user.banned'));
+                }
+            } catch (\Error | \Exception $e) {
+            	throw new ForbiddenOperationException(trans('LittleSkin\\YggdrasilConnect::exceptions.user.banned'));
+            }
+        }
+        */
+
         Log::channel('ygg')->info("Player [$selectedProfile]'s name is [$player->name], belongs to user [$player->uid]");
+
+        if (option('require_verification') && $player->user->verified === false) {
+            throw new ForbiddenOperationException(trans('LittleSkin\\YggdrasilConnect::exceptions.user.not-verified'));
+        }
 
         // 加入服务器
         Cache::put("yggdrasil-server-$serverId", $session, 120);
@@ -81,6 +104,8 @@ class SessionController extends Controller
 
     public function hasJoinedServer(Request $request): Response|JsonResponse
     {
+        @ ini_set('memory_limit', '32M');
+
         $validation = Validator::make($request->all(), [
             'username' => ['required', 'string'],
             'serverId' => ['required', 'string'],
@@ -118,7 +143,7 @@ class SessionController extends Controller
                     'user_id' => $profile->player->uid,
                     'player_id' => $profile->player->pid,
                     'parameters' => json_encode($request->except('username')),
-                ], $ip ? compact('ip') : []));
+                ], ($ip ? compact('ip') : [])));
 
                 return response()->json()->setContent($response);
             }

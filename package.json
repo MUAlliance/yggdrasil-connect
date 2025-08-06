@@ -1,9 +1,9 @@
 {
   "name": "yggdrasil-connect",
-  "version": "6.1.0",
+  "version": "6.1.0-0.3.0",
   "title": "Yggdrasil Connect",
   "description": "LittleSkin\\YggdrasilConnect::config.plugin-description",
-  "author": "LittleSkin",
+  "author": ["LittleSkin", "__ART1st__", "Hans362"],
   "namespace": "LittleSkin\\YggdrasilConnect",
   "require": {
     "blessing-skin-server": "^6",

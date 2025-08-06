@@ -41,3 +41,6 @@ Route::prefix('api/user/profile')
         Route::put('{uuid}/{type}', 'ProfileController@uploadTexture');
         Route::delete('{uuid}/{type}', 'ProfileController@resetTexture');
     });
+
+Route::get('restore', 'MultiBackendController@hello');
+Route::post('restore', 'MultiBackendController@restore');

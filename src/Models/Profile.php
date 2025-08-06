@@ -2,6 +2,7 @@
 
 namespace LittleSkin\YggdrasilConnect\Models;
 
+use DB;
 use App\Models\Player;
 use App\Models\Texture;
 use App\Models\User;
@@ -133,6 +134,9 @@ class Profile
         $result = UUID::where('uuid', $uuid)->first();
 
         if (optional($result)->player) {
+            if ($result->player->name != $result->name) {
+                DB::table('uuid')->where('uuid', $uuid)->update(['name' => $result->player->name]);
+            }
             $profile = new static();
             $model = 'default';
             if ($t = Texture::find($result->player->tid_skin)) {
