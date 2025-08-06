@@ -41,7 +41,7 @@ return function (Dispatcher $events, Filter $filter, Request $request) {
         ygg_log_http_request_and_response();
     }
 
-    $filter->add('can_add_player', function (bool $can, string $name) {
+    $filter->add('can_add_player', function ($can, string $name) {
         if (option('ygg_uuid_algorithm') === 'v3') {
             $uuid = UUID::generateUuidV3($name);
             if (UUID::where('uuid', $uuid)->orWhere('name', $name)->count()) {
