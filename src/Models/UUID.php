@@ -35,9 +35,12 @@ class UUID extends Model
 
         static::updating(function (UUID $model) {
             $model->name = $model->player->name;
+            /*
             if (option('ygg_uuid_algorithm') === 'v3') {
                 $model->uuid = static::generateUuidV3($model->name);
             }
+            */
+            // 当启用Union时，即便使用了盗版UUID，仍然确保角色修改名称后UUID一致。
         });
 
         static::retrieved(function (UUID $model) {

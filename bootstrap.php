@@ -45,7 +45,7 @@ return function (Dispatcher $events, Filter $filter, Request $request) {
         if (option('ygg_uuid_algorithm') === 'v3') {
             $uuid = UUID::generateUuidV3($name);
             if (UUID::where('uuid', $uuid)->orWhere('name', $name)->count()) {
-                return new Rejection('UUID 表数据错误，请联系站点管理员处理');
+                return new Rejection('名称 已经被占用。');
             }
         } else {
             if (UUID::where('name', $name)->count()) {
