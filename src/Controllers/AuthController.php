@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use LittleSkin\YggdrasilConnect\Exceptions\Yggdrasil\ForbiddenOperationException;
@@ -81,6 +82,19 @@ class AuthController extends Controller
 
     public function refresh(Request $request): JsonResponse
     {
+        if (!method_exists(Validator::class, 'validateRequiredArrayKeys')) {
+            Validator::extend('required_array_keys', function($attribute, $value, $parameters) {
+                if (! is_array($value)) {
+                    return false;
+                }
+                foreach ($parameters as $param) {
+                    if (! Arr::exists($value, $param)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
         $validation = Validator::make($request->all(), [
             'selectedProfile' => ['nullable', 'required_array_keys:id,name'],
             'selectedProfile.id' => ['required_with:selectedProfile', 'string'],
