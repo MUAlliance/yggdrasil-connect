@@ -12,6 +12,7 @@ use Log;
 
 use App\Models\Player;
 use LittleSkin\YggdrasilConnect\Utils\RSAPublicUtil;
+use LittleSkin\YggdrasilConnect\Exceptions\Yggdrasil\ForbiddenOperationException;
 
 class UnionOAuth2Controller extends Controller {
 
