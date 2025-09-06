@@ -4,6 +4,7 @@ namespace LittleSkin\YggdrasilConnect\Models;
 
 use App\Models\User as BaseUser;
 use App\Services\Facades\Option;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Passport\RefreshTokenRepository;
 use Laravel\Passport\Token;
@@ -105,7 +106,7 @@ class AccessToken
 
     public function isExpired2(): bool
     {
-        return $this->isExpired1() && $this->passportToken->created_at->addSeconds(Option::get('ygg_token_expire_2'))->isPast();
+        return $this->isExpired1() && Carbon::parse($this->passportToken->created_at)->addSeconds(Option::get('ygg_token_expire_2'))->isPast();
     }
 
     private function hasScopesToJoinServer(): bool
