@@ -40,7 +40,7 @@ backend:
 blacklist:
   title: 联合黑名单
   add: 添加
-  add_hint: 添加前，请务必前往wiki查看注意事项，并在MUA理事会群内通知。
+  add_hint: 添加前，请务必前往wiki查看注意事项（https://docs.mualliance.cn/zh/dev/union/blacklist-notice），并在MUA理事会群内通知。
   email: 邮箱
   reason: 理由
   submit: 提交

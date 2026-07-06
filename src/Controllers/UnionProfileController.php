@@ -51,7 +51,7 @@ class UnionProfileController extends Controller
         if ($response->ok()) {
             return ['token' => $response->json()['token']];
         }
-        return response($response->body(), $response->status());
+        return response($response->body(), $response->status())->header('Content-Type', $response->header('Content-Type'));
     }
 
     public function unbind(Request $request)
@@ -61,7 +61,7 @@ class UnionProfileController extends Controller
         if ($response->ok()) {
             return;
         }
-        return response($response->body(), $response->status());
+        return response($response->body(), $response->status())->header('Content-Type', $response->header('Content-Type'));
     }
 
     public function bindTo(Request $request)
@@ -71,7 +71,7 @@ class UnionProfileController extends Controller
         if ($response->ok()) {
             return;
         }
-        return response($response->body(), $response->status());
+        return response($response->body(), $response->status())->header('Content-Type', $response->header('Content-Type'));
     }
 
     public function requestRemapUUID(Request $request)
@@ -81,6 +81,6 @@ class UnionProfileController extends Controller
         if ($response->ok()) {
             return;
         }
-        return response($response->body(), $response->status());
+        return response($response->body(), $response->status())->header('Content-Type', $response->header('Content-Type'));
     }
 }

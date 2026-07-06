@@ -93,7 +93,7 @@ function fetchPage(page = 1) {
       if (item.label == "pagination.previous") {
         paginationHTML += ' \
           <li class="page-item' + ((item.url === null) ? ' disabled' : '') + '" title="{{ trans("Union::profilemaps_list.last_page") }}"> \
-            <a href="#" class="page-link" aria-disabled="' + (item.url === null) + '"' + ((item.url === null) ? '' : (' onclick="fetchPage(' + item.label + ');return false;"')) + '> \
+            <a href="#" class="page-link" aria-disabled="' + (item.url === null) + '"' + ((item.url === null) ? '' : (' onclick="fetchPage(' + (page - 1).toString() + ');return false;"')) + '> \
               ‹ \
               <span class="d-inline d-sm-none ml-1">{{ trans("Union::profilemaps_list.last_page") }}</span> \
             </a> \
@@ -102,7 +102,7 @@ function fetchPage(page = 1) {
       } else if (item.label == "pagination.next") {
         paginationHTML += ' \
           <li class="page-item' + ((item.url === null) ? ' disabled' : '') + '" title="{{ trans("Union::profilemaps_list.next_page") }}"> \
-            <a href="#" class="page-link" aria-disabled="' + (item.url === null) + '"' + ((item.url === null) ? '' : (' onclick="fetchPage(' + item.label + ');return false;"')) + '> \
+            <a href="#" class="page-link" aria-disabled="' + (item.url === null) + '"' + ((item.url === null) ? '' : (' onclick="fetchPage(' + (page + 1).toString() + ');return false;"')) + '> \
               › \
               <span class="d-inline d-sm-none ml-1">{{ trans("Union::profilemaps_list.next_page") }}</span> \
             </a> \
